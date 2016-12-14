@@ -1,6 +1,5 @@
 # CoffeeAdapter
 
-- - - - 
 [TOC]
 
 ## 设计理念

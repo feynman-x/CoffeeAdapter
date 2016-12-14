@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(int position, Student student, View view) {
                 //1.弹窗
-//                Toast.makeText(MainActivity.this, "I am " + position + "button", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "I am " + position + "button", Toast.LENGTH_SHORT).show();
                 //2.修改数据并更新
 //                student.age = 18;
 //                adapter.notifyDataSetChanged();
@@ -64,10 +64,10 @@ public class MainActivity extends AppCompatActivity {
         TextView textView = new TextView(this);
         textView.setText("-----> 我是footer <------");
 
-//        adapter.addHeaderView(imageView);
-//        adapter.addFooterView(textView);
+        adapter.addHeaderView(imageView);
+        adapter.addFooterView(textView);
 
-        mContentRecyView.setLayoutManager(new LinearLayoutManager(this));
+        mContentRecyView.setLayoutManager(new GridLayoutManager(this,2));
         mContentRecyView.setAdapter(adapter);
     }
 }

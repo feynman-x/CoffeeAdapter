@@ -1,4 +1,4 @@
-package com.drolmen.coffeeadapter;
+package com.drolmen.coffeeadapter.utils;
 
 import java.util.ArrayList;
 

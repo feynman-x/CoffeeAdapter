@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import com.drolmen.coffeeadapter.CoffeeHolder;
 import com.drolmen.coffeeadapter.R;
 import com.drolmen.coffeeadapter.interfaces.OnRvItemClickListener;
+import com.drolmen.coffeeadapter.utils.CoffeeUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +28,11 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
 
     private ArrayList<T> mDatas;
 
-    private RecyclerView mOwnerRecyclerView ;
+    private ArrayList<View> mHeaderViews ;
+    private ArrayList<View> mFooterViews ;
+
+    private final static int HeaderViewBeginIndex = -2;
+    private final static int FooterViewBeginIndex = -100;
 
     private HashMap<Integer,OnRvItemClickListener> mClickMaps ;
 
@@ -35,6 +40,8 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
         mContext = context;
         mInflater = LayoutInflater.from(context);
         mDatas = new ArrayList(arrayList);
+        mHeaderViews = new ArrayList<>();
+        mFooterViews = new ArrayList<>();
     }
 
     @Override
@@ -45,21 +52,47 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
 
     /**
      * position 对应的ViewType
+     * 此方法可以被重写，但是必须遵循一定规则
+     * 只有当此方法返回值为RecyclerView.INVALID_TYPE时，重写此方法。
      */
     @Override
-    public int getItemViewType(int position) {
-        return super.getItemViewType(position);
+    public final int getItemViewType(int position) {
+        int sizeFromArray = CoffeeUtils.getSizeFromArray(mHeaderViews);
+
+        if (sizeFromArray > 0 && position < sizeFromArray ){        // HeaderView
+            return HeaderViewBeginIndex - position ;
+        }
+
+        position = position - sizeFromArray ;       //更新偏移量
+        sizeFromArray = CoffeeUtils.getSizeFromArray(mDatas);
+        if (sizeFromArray > 0 && position < sizeFromArray){         //ContentView
+            if (isMultLayoutEnable()){
+                return RecyclerView.INVALID_TYPE;
+            }else {
+                return 0 ;
+            }
+        }
+
+        position = position - sizeFromArray;
+        return FooterViewBeginIndex - position ;                //FooterView
     }
 
     @Override
     public final CoffeeHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
         CoffeeHolder holder = null ;
+        View view = null ;
 
-        View inflate = mInflater.inflate(getLayoutResId(viewType), parent, false);
-        bindClickListener(inflate);
+        if (viewType <= HeaderViewBeginIndex && viewType >FooterViewBeginIndex){    //HeaderView
+            view = mHeaderViews.get(HeaderViewBeginIndex - viewType);
+        }else if (viewType <= FooterViewBeginIndex){        //FooterView
+            view = mFooterViews.get(FooterViewBeginIndex - viewType);
+        }else {             //ContentView
+            view = mInflater.inflate(getLayoutResId(viewType), parent, false);
+        }
 
-        holder = new CoffeeHolder(inflate);
+        bindClickListener(view);
+        holder = new CoffeeHolder(view);
         return holder;
     }
 
@@ -81,19 +114,31 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
 
     @Override
     public final void onBindViewHolder(CoffeeHolder holder, int position) {
-        holder.itemView.setTag(R.id.tag_for_position,position);
-        for (Integer integer : mClickMaps.keySet()) {
-            View viewById = holder.getView(integer);
-            if (viewById != null){
-                viewById.setTag(R.id.tag_for_position,position);
-            }
+
+        int contentSize = CoffeeUtils.getSizeFromArray(mDatas);
+        if (contentSize == 0){
+            return;
         }
-        bindView(holder,mDatas.get(position));
+
+        int headerViewCount = CoffeeUtils.getSizeFromArray(mHeaderViews);
+
+        if (position > headerViewCount-1 && position < headerViewCount + contentSize){
+            // posotion 偏移量矫正
+            position -= headerViewCount ;
+            holder.itemView.setTag(R.id.tag_for_position,position);
+            for (Integer integer : mClickMaps.keySet()) {
+                View viewById = holder.getView(integer);
+                if (viewById != null){
+                    viewById.setTag(R.id.tag_for_position,position);
+                }
+            }
+            bindView(holder,mDatas.get(position));
+        }
     }
 
     @Override
     public final int getItemCount() {
-        return mDatas.size();
+        return mDatas.size() + CoffeeUtils.getSizeFromArray(mHeaderViews) + CoffeeUtils.getSizeFromArray(mFooterViews);
     }
 
     /**
@@ -128,4 +173,12 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
      * PS:holder中储存有position已经对应的viewType
      */
     public abstract void bindView(CoffeeHolder holder, T t) ;
+
+    public void addHeaderView(View view){
+        mHeaderViews.add(view);
+    }
+
+    public void addFooterView(View view){
+        mFooterViews.add(view);
+    }
 }

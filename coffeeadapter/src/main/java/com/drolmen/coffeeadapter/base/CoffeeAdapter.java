@@ -3,10 +3,13 @@ package com.drolmen.coffeeadapter.base;
 import android.content.Context;
 import android.support.annotation.IdRes;
 import android.support.annotation.LayoutRes;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Space;
 
 import com.drolmen.coffeeadapter.CoffeeHolder;
 import com.drolmen.coffeeadapter.R;
@@ -15,6 +18,8 @@ import com.drolmen.coffeeadapter.utils.CoffeeUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by 董猛 on 2016/10/23.
@@ -36,6 +41,12 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
 
     private HashMap<Integer,OnRvItemClickListener> mClickMaps ;
 
+    private RecyclerView mOwerRecyclerView ;
+
+    private int mSpanCount;
+
+    private boolean hasClipping;
+
     public CoffeeAdapter(Context context, ArrayList<T> arrayList) {
         mContext = context;
         mInflater = LayoutInflater.from(context);
@@ -47,6 +58,49 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
     @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
+
+        mOwerRecyclerView = recyclerView;
+        RecyclerView.LayoutManager layoutManager = mOwerRecyclerView.getLayoutManager();
+        if (layoutManager instanceof GridLayoutManager){
+            GridLayoutManager manager = (GridLayoutManager) layoutManager;
+            mSpanCount = manager.getSpanCount();
+
+            if (mSpanCount > 1){
+                hasClipping = false ;
+                mOwerRecyclerView.setClipChildren(hasClipping);
+
+                int sizeFromArray = CoffeeUtils.getSizeFromArray(mHeaderViews);
+                ArrayList newHeaderList = new ArrayList();
+                for (View view : mHeaderViews) {
+                    for (int i = 0; i < mSpanCount; i++) {
+                        if (i == 0){
+                            newHeaderList.add(view);
+                        }else {
+                            Space space = new Space(mContext);
+                            newHeaderList.add(space);
+                        }
+                    }
+                }
+                mHeaderViews = newHeaderList ;
+
+                sizeFromArray = CoffeeUtils.getSizeFromArray(mFooterViews);
+                ArrayList newFooterList = new ArrayList();
+                for (View footerView : mFooterViews) {
+                    for (int i = 0; i < mSpanCount; i++) {
+                        if (i == 0) {
+                            newFooterList.add(footerView);
+                        } else {
+                            Space space = new Space(mContext);
+                            newFooterList.add(space);
+                        }
+                    }
+                }
+                mFooterViews = newFooterList ;
+            }
+        }else {
+            hasClipping = true ;
+        }
+
         examAdapter();
     }
 
@@ -80,11 +134,18 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
     @Override
     public final CoffeeHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
+
         CoffeeHolder holder = null ;
         View view = null ;
 
         if (viewType <= HeaderViewBeginIndex && viewType >FooterViewBeginIndex){    //HeaderView
             view = mHeaderViews.get(HeaderViewBeginIndex - viewType);
+            if (!hasClipping){
+                int height = mOwerRecyclerView.getHeight() ;
+                int width = mOwerRecyclerView.getWidth() ;
+                RecyclerView.LayoutParams lp = new GridLayoutManager.LayoutParams(width, RecyclerView.LayoutParams.WRAP_CONTENT);
+                view.setLayoutParams(lp);
+            }
         }else if (viewType <= FooterViewBeginIndex){        //FooterView
             view = mFooterViews.get(FooterViewBeginIndex - viewType);
         }else {             //ContentView
@@ -138,6 +199,7 @@ public abstract class CoffeeAdapter<T> extends RecyclerView.Adapter<CoffeeHolder
 
     @Override
     public final int getItemCount() {
+        Log.d(TAG, "getItemCount: ");
         return mDatas.size() + CoffeeUtils.getSizeFromArray(mHeaderViews) + CoffeeUtils.getSizeFromArray(mFooterViews);
     }
 

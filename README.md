@@ -26,4 +26,17 @@ compile 'com.drolmen:CoffeeAdapter:0.1.0'
 
 ### 多布局
 
+### 添加HeaderView 和 FooterView
+```java
+//添加必须在调用RecyclerView#setAdapter方法之前
+adapter.addHeaderView(headerView) ;     //添加HeaderView
+adapter.addFooterView(headerView) ;     //添加FooterView
+recyclerview.setAdapter(adapter);          
+```
+
 ### 设置点击事件
+```
+adapter.setViewClickListener(R.id.alertBtn, new OnRvItemClickListener<Student>() {
+    //do someThings
+});
+```
